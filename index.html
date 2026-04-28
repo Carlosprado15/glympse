@@ -7,27 +7,30 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background-color: #000; color: #fff; overflow: hidden; height: 100vh; width: 100vw; font-family: sans-serif; }
-        .video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
-        .video-bg { width: 100%; height: 100%; object-fit: cover; }
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 25px; background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent, rgba(0,0,0,0.8)); }
-        .logo { font-size: 26px; font-weight: bold; letter-spacing: 4px; }
+        .video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #000; }
+        .video-bg { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 30px; background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent, rgba(0,0,0,0.9)); }
+        .logo { font-size: 28px; font-weight: bold; letter-spacing: 6px; }
         .logo span { color: #ff3e60; }
-        .content { margin-bottom: 100px; }
-        .tag { color: #ff3e60; font-size: 12px; font-weight: bold; margin-bottom: 10px; }
-        .title { font-size: 28px; font-weight: bold; margin-bottom: 10px; }
-        #tapBtn { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.8); color: white; cursor: pointer; text-align: center; padding: 20px; }
-        .play-box { border: 2px solid #fff; padding: 20px; border-radius: 10px; font-weight: bold; }
+        .content { margin-bottom: 50px; }
+        .tag { color: #ff3e60; font-size: 13px; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+        .title { font-size: 32px; font-weight: bold; margin-bottom: 10px; line-height: 1.1; }
+        .desc { font-size: 14px; color: #aaa; }
+        
+        /* BOTÃO DE ENTRADA */
+        #tapBtn { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); cursor: pointer; }
+        .play-box { border: 1px solid #ff3e60; color: #ff3e60; padding: 20px 40px; border-radius: 5px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 0 20px rgba(255, 62, 96, 0.3); }
     </style>
 </head>
 <body>
 
     <div id="tapBtn">
-        <div class="play-box">CLIQUE AQUI PARA<br>ENTRAR NO GLYMPSE</div>
+        <div class="play-box">Acessar Sistema</div>
     </div>
 
     <div class="video-container">
         <video id="mainVideo" class="video-bg" loop playsinline muted>
-            <source src="https://assets.mixkit.co/videos/preview/mixkit-stars-in-the-night-sky-out-of-focus-31511-large.mp4" type="video/mp4">
+            <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
         </video>
     </div>
 
@@ -35,8 +38,8 @@
         <div class="logo">GLY<span>MPSE</span></div>
         <div class="content">
             <div class="tag">⚡ SISTEMA ATIVO</div>
-            <div class="title">REDE SINTÉTICA <br>ESTABELECIDA</div>
-            <p>Conexão via satélite confirmada.</p>
+            <div class="title">REDE SINTÉTICA<br>ESTABELECIDA</div>
+            <p class="desc">Interface Glympse v1.0 - Modo Seguro</p>
         </div>
     </div>
 
@@ -46,8 +49,14 @@
 
         tapBtn.addEventListener('click', () => {
             video.muted = false; 
-            video.play();
-            tapBtn.style.display = 'none'; 
+            video.play().then(() => {
+                tapBtn.style.display = 'none'; 
+            }).catch(e => {
+                // Se der erro com som, tenta rodar mudo mesmo
+                video.muted = true;
+                video.play();
+                tapBtn.style.display = 'none';
+            });
         });
     </script>
 </body>
