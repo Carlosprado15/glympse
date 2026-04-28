@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>GLYMPSE</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --accent: #FF2D55; --accent2: #0AE7FF; --gold: #FFD700;
+    --glass: rgba(255,255,255,0.04); --border: rgba(255,255,255,0.08);
+    --dim: rgba(255,255,255,0.45);
+  }
+  html, body { width:100%; height:100%; background:#000; color:#fff; font-family:'Inter',sans-serif; overflow:hidden; -webkit-tap-highlight-color:transparent; user-select:none; }
+
+  /* SCREENS */
+  .screen { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:opacity .6s ease, transform .6s ease; }
+  .screen.hidden { opacity:0; pointer-events:none; transform:scale(1.04); }
+
+  /* SPLASH */
+  #splash { background:#000; z-index:100; }
+  .logo-wrap { display:flex; flex-direction:column; align-items:center; gap:12px; animation:splashIn 1.2s cubic-bezier(.16,1,.3,1) both; }
+  @keyframes splashIn { from{opacity:0;transform:scale(.7) translateY(30px)} to{opacity:1;transform:scale(1) translateY(0)} }
+  .logo-g { width:110px; height:110px; background:#000; border:2px solid rgba(255,255,255,.12); border-radius:28px; display:flex; align-items:center; justify-content:center; position:relative; box-shadow:0 0 60px rgba(255,45,85,.15); }
+  .logo-g::before { content:''; position:absolute; inset:-1px; border-radius:29px; background:linear-gradient(135deg,var(--accent),transparent 50%,var(--accent2)); opacity:.4; z-index:-1; }
+  .logo-g span { font-family:'Bebas Neue',sans-serif; font-size:72px; line-height:1; background:linear-gradient(135deg,#fff 30%,var(--accent) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .logo-wordmark { font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:10px; opacity:.9; }
+  .splash-tagline { margin-top:32px; font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--dim); font-family:'Space Mono',monospace; animation:fadeUp 1.4s .4s both; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  .splash-bar { margin-top:60px; width:80px; height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); animation:barPulse 1.5s .8s both; }
+  @keyframes barPulse { from{opacity:0;width:0} to{opacity:1;width:80px} }
+
+  /* FEED */
+  #feed { background:#000; z-index:10; justify-content:flex-start; padding:0; overflow:hidden; }
+  .status-bar { position:absolute; top:0; left:0; right:0; height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 20px; z-index:50; background:linear-gradient(to bottom,rgba(0,0,0,.8),transparent); }
+  .status-bar .time { font-family:'Space Mono',monospace; font-size:13px; font-weight:700; }
+  .status-icons { display:flex; gap:6px; align-items:center; }
+  .status-icons span { font-size:11px; color:var(--dim); }
+  .top-bar { position:absolute; top:44px; left:0; right:0; height:48px; display:flex; align-items:center; justify-content:space-between; padding:0 20px; z-index:50; background:linear-gradient(to bottom,rgba(0,0,0,.6),transparent); }
+  .top-logo { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:5px; background:linear-gradient(90deg,#fff,var(--accent)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .top-right { display:flex; gap:16px; align-items:center; }
+  .icon-btn { width:36px; height:36px; background:var(--glass); border:1px solid var(--border); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; backdrop-filter:blur(8px); }
+  .feed-container { width:100%; height:100%; position:relative; overflow:hidden; }
+
+  /* VIDEO CARD */
+  .video-card { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; transition:transform .4s cubic-bezier(.25,.46,.45,.94), opacity .4s ease; }
+  .video-card.active { transform:translateY(0); opacity:1; z-index:10; }
+  .video-card.above  { transform:translateY(-100%); opacity:0; z-index:5; }
+  .video-card.below  { transform:translateY(100%); opacity:0; z-index:5; }
+
+  /* REAL VIDEO — hides ALL native browser chrome */
+  video.real-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#000; z-index:0; }
+  video::-webkit-media-controls,
+  video::-webkit-media-controls-enclosure,
+  video::-webkit-media-controls-panel,
+  video::-webkit-media-controls-play-button,
+  video::-webkit-media-controls-start-playback-button { display:none !important; opacity:0 !important; }
+
+  .video-overlay { position:absolute; inset:0; z-index:1; background:linear-gradient(to bottom,transparent 30%,rgba(0,0,0,.3) 60%,rgba(0,0,0,.85) 100%); }
+  .scan-line { position:absolute; left:0; right:0; height:2px; z-index:2; background:linear-gradient(90deg,transparent,var(--accent2),transparent); opacity:0; animation:scanDown 3s 1s infinite; }
+  @keyframes scanDown { 0%{top:0;opacity:0} 5%{opacity:.6} 95%{opacity:.4} 100%{top:100%;opacity:0} }
+  .cat-badge { position:absolute; top:105px; left:18px; z-index:20; padding:4px 12px; border-radius:20px; font-size:10px; letter-spacing:2px; text-transform:uppercase; font-family:'Space Mono',monospace; font-weight:700; backdrop-filter:blur(8px); }
+  .cat-shock  { background:rgba(255,45,85,.25); border:1px solid var(--accent); color:var(--accent); }
+  .cat-mag    { background:rgba(255,215,0,.15); border:1px solid var(--gold); color:var(--gold); }
+  .cat-voyeur { background:rgba(10,231,255,.15); border:1px solid var(--accent2); color:var(--accent2); }
+  .progress-bar { position:absolute; top:100px; left:18px; right:18px; height:2px; z-index:20; background:rgba(255,255,255,.1); border-radius:2px; overflow:hidden; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:2px; animation:prog 30s linear forwards; }
+  @keyframes prog { from{width:0} to{width:100%} }
+  .video-info { position:relative; z-index:20; width:100%; padding:0 18px 100px; }
+  .video-tags { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+  .tag { font-size:10px; color:var(--dim); font-family:'Space Mono',monospace; letter-spacing:1px; }
+  .video-title { font-family:'Bebas Neue',sans-serif; font-size:26px; line-height:1.1; letter-spacing:1px; margin-bottom:8px; text-shadow:0 2px 20px rgba(0,0,0,.8); }
+  .video-sub { font-size:12px; color:rgba(255,255,255,.6); line-height:1.5; max-width:260px; }
+  .side-actions { position:absolute; right:16px; bottom:130px; z-index:20; display:flex; flex-direction:column; gap:20px; align-items:center; }
+  .action-btn { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; }
+  .action-icon { width:46px; height:46px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.15); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; backdrop-filter:blur(8px); transition:all .15s; }
+  .action-icon:active { transform:scale(.88); }
+  .action-label { font-size:10px; color:var(--dim); font-family:'Space Mono',monospace; }
+  .action-btn.liked .action-icon { background:rgba(255,45,85,.25); border-color:var(--accent); }
+  .bottom-nav { position:absolute; bottom:0; left:0; right:0; height:80px; z-index:50; background:linear-gradient(to top,rgba(0,0,0,.95) 60%,transparent); display:flex; align-items:flex-start; justify-content:space-around; padding-top:10px; }
+  .nav-item { display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; padding:8px 16px; }
+  .nav-icon { font-size:22px; }
+  .nav-label { font-size:9px; letter-spacing:1px; text-transform:uppercase; font-family:'Space Mono',monospace; color:var(--dim); }
+  .nav-item.active .nav-icon { filter:drop-shadow(0 0 6px var(--accent)); }
+  .nav-item.active .nav-label { color:#fff; }
+
+  /* TAP-TO-PLAY OVERLAY */
+  #tapBtn { position:fixed; inset:0; z-index:998; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; cursor:pointer; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); transition:opacity 0.3s; }
+  #tapBtn.hidden { display:none; }
+  .tap-circle { width:88px; height:88px; border-radius:50%; background:rgba(0,0,0,.65); border:3px solid rgba(255,255,255,.9); display:flex; align-items:center; justify-content:center; font-size:34px; color:#fff; padding-left:5px; box-shadow:0 0 50px rgba(0,0,0,.9); animation:tapPulse 1.5s ease-in-out infinite; }
+  @keyframes tapPulse { 0%,100%{transform:scale(1);opacity:.85} 50%{transform:scale(1.08);opacity:1} }
+  #tapBtn p { font-family:'Space Mono',monospace; font-size:11px; letter-spacing:3px; color:rgba(255,255,255,.65); text-transform:uppercase; }
+
+  /* PAYWALL */
+  #paywall { background:#000; z-index:20; padding:0 28px; text-align:center; overflow:hidden; }
+  .paywall-glow { position:absolute; width:300px; height:300px; border-radius:50%; background:radial-gradient(circle,rgba(255,45,85,.2) 0%,transparent 70%); top:-100px; left:50%; transform:translateX(-50%); pointer-events:none; }
+  .paywall-glow2 { position:absolute; width:200px; height:200px; border-radius:50%; background:radial-gradient(circle,rgba(10,231,255,.15) 0%,transparent 70%); bottom:100px; right:-40px; pointer-events:none; }
+  .paywall-logo { font-family:'Bebas Neue',sans-serif; font-size:44px; letter-spacing:8px; background:linear-gradient(135deg,#fff 40%,var(--accent)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:4px; }
+  .paywall-eyebrow { font-family:'Space Mono',monospace; font-size:10px; letter-spacing:3px; color:var(--accent); text-transform:uppercase; margin-bottom:32px; }
+  .days-counter { font-family:'Bebas Neue',sans-serif; font-size:120px; line-height:1; background:linear-gradient(135deg,var(--accent) 0%,#ff6b35 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(0 0 40px rgba(255,45,85,.4)); }
+  .days-label { font-family:'Space Mono',monospace; font-size:11px; letter-spacing:4px; color:var(--dim); text-transform:uppercase; margin-bottom:28px; }
+  .paywall-headline { font-family:'Bebas Neue',sans-serif; font-size:36px; line-height:1.1; letter-spacing:1px; margin-bottom:12px; }
+  .paywall-body { font-size:13px; color:rgba(255,255,255,.55); line-height:1.7; max-width:300px; margin:0 auto 32px; }
+  .paywall-features { display:flex; flex-direction:column; gap:12px; margin-bottom:36px; text-align:left; }
+  .feat-row { display:flex; align-items:center; gap:12px; }
+  .feat-icon { width:32px; height:32px; background:var(--glass); border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+  .feat-text { font-size:13px; color:rgba(255,255,255,.75); }
+  .feat-text strong { color:#fff; }
+  .price-block { background:var(--glass); border:1px solid var(--border); border-radius:20px; padding:20px 24px; margin-bottom:16px; position:relative; overflow:hidden; }
+  .price-block::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,45,85,.08),transparent); pointer-events:none; }
+  .price-badge { position:absolute; top:12px; right:12px; background:var(--accent); color:#fff; font-size:9px; font-family:'Space Mono',monospace; letter-spacing:1px; text-transform:uppercase; padding:3px 8px; border-radius:20px; font-weight:700; }
+  .price-name { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:3px; margin-bottom:4px; }
+  .price-amount { font-family:'Bebas Neue',sans-serif; font-size:48px; line-height:1; background:linear-gradient(90deg,#fff,var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .price-period { font-size:12px; color:var(--dim); margin-top:2px; }
+  .cta-btn { width:100%; padding:18px; border-radius:16px; border:none; font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:4px; cursor:pointer; transition:all .2s; margin-bottom:12px; }
+  .cta-primary { background:linear-gradient(135deg,var(--accent),#ff6b35); color:#fff; box-shadow:0 8px 32px rgba(255,45,85,.4); }
+  .cta-secondary { background:transparent; color:var(--dim); border:1px solid var(--border) !important; font-size:13px; letter-spacing:1px; font-family:'Inter',sans-serif; padding:14px; }
+  .paywall-note { font-size:10px; color:rgba(255,255,255,.25); font-family:'Space Mono',monospace; letter-spacing:1px; margin-top:16px; padding-bottom:40px; }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.15); border-radius:50px; padding:10px 20px; font-size:12px; font-family:'Space Mono',monospace; color:#fff; backdrop-filter:blur(16px); z-index:300; opacity:0; transition:all .3s ease; white-space:nowrap; pointer-events:none; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div class="screen" id="splash">
+  <div class="logo-wrap">
+    <div class="logo-g"><span>G</span></div>
+    <div class="logo-wordmark">GLYMPSE</div>
+    <div class="splash-tagline">Você não vai acreditar</div>
+    <div class="splash-bar"></div>
+  </div>
+</div>
+
+<!-- FEED -->
+<div class="screen hidden" id="feed">
+  <div class="status-bar">
+    <span class="time" id="clock">00:00</span>
+    <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋 87%</span></div>
+  </div>
+  <div class="top-bar">
+    <div class="top-logo">GLYMPSE</div>
+    <div class="top-right">
+      <div class="icon-btn">🔍</div>
+      <div class="icon-btn" onclick="showPaywall()">👑</div>
+    </div>
+  </div>
+  <div class="feed-container" id="feedContainer"></div>
+  <div class="bottom-nav">
+    <div class="nav-item active"><span class="nav-icon">⚡</span><span class="nav-label">Feed</span></div>
+    <div class="nav-item" onclick="showToast('Em breve')"><span class="nav-icon">🎲</span><span class="nav-label">Roleta</span></div>
+    <div class="nav-item" onclick="showPaywall()"><span class="nav-icon">👑</span><span class="nav-label">Pro</span></div>
+    <div class="nav-item" onclick="showToast('Em breve')"><span class="nav-icon">👤</span><span class="nav-label">Perfil</span></div>
+  </div>
+</div>
+
+<!-- TAP TO PLAY (shown after splash, hides after first tap) -->
+<div id="tapBtn" class="hidden">
+  <div class="tap-circle">&#9654;</div>
+  <p>Toque para iniciar</p>
+</div>
+
+<!-- PAYWALL -->
+<div class="screen hidden" id="paywall">
+  <div class="paywall-glow"></div><div class="paywall-glow2"></div>
+  <div style="overflow-y:auto;width:100%;padding:60px 28px 0;scrollbar-width:none;">
+    <div class="paywall-logo">GLYMPSE</div>
+    <div class="paywall-eyebrow">Seus 10 dias acabaram</div>
+    <div class="days-counter">10</div>
+    <div class="days-label">Dias gratuitos encerrados</div>
+    <div class="paywall-headline">Você está viciado.<br>Assine e continue.</div>
+    <div class="paywall-body">Você já viu coisas que não deveriam existir. O que vem a seguir é ainda mais intenso.</div>
+    <div class="paywall-features">
+      <div class="feat-row"><div class="feat-icon">⚡</div><div class="feat-text"><strong>Feed Infinito</strong> — sem limite de vídeos por dia</div></div>
+      <div class="feat-row"><div class="feat-icon">🎲</div><div class="feat-text"><strong>Roleta do Caos</strong> — acesso ilimitado ao aleatório</div></div>
+      <div class="feat-row"><div class="feat-icon">🔥</div><div class="feat-text"><strong>Deep Shock</strong> — camada exclusiva de conteúdo extremo</div></div>
+      <div class="feat-row"><div class="feat-icon">👁️</div><div class="feat-text"><strong>A Espreita</strong> — bastidores e ângulos "proibidos"</div></div>
+    </div>
+    <div class="price-block">
+      <div class="price-badge">Mais popular</div>
+      <div class="price-name">GLYMPSE PRO</div>
+      <div class="price-amount">R$ 9,90</div>
+      <div class="price-period">por mês · cancele quando quiser</div>
+    </div>
+    <button class="cta-btn cta-primary" onclick="showToast('🚀 Assinatura iniciada!')">ASSINAR AGORA</button>
+    <button class="cta-btn cta-secondary" onclick="hidePaywall()">Continuar limitado (5 vídeos/dia)</button>
+    <div class="paywall-note">Cobrança mensal · Sem fidelidade · Cancele quando quiser</div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ----- DADOS DOS CARDS -----
+const CARDS = [
+  { cat:'cat-shock',  label:'⚡ DEEP SHOCK',  title:'CHUVA DE METEOROS<br>EM CÂMERA LENTA',      sub:'Capturado no deserto do Saara. Ninguém acreditou que fosse real.',   tags:['#impossivel','#choque','#natureza'] },
+  { cat:'cat-mag',    label:'✨ MAGNÉTICO',   title:'MANSÃO SECRETA<br>SÃO PAULO',               sub:'Bastidores de uma festa para 50 pessoas. Você não foi convidado.', tags:['#luxo','#bastidores','#exclusivo'] },
+  { cat:'cat-voyeur', label:'👁️ A ESPREITA', title:'CÂMERA DE<br>SEGURANÇA B1',                sub:'Algo que você não deveria estar vendo. Mas não consegue parar.', tags:['#flagra','#real','#voyeur'] },
+  { cat:'cat-shock',  label:'⚡ DEEP SHOCK',  title:'ILUSÃO ÓTICA<br>QUE QUEBRA O CÉREBRO',      sub:'94% das pessoas não consegue olhar por mais de 8 segundos.',       tags:['#ilusao','#cerebro','#viral'] },
+  { cat:'cat-mag',    label:'✨ MAGNÉTICO',   title:'TEMPESTADE<br>NO HORIZONTE',                sub:'Filmado de helicóptero às 3 da manhã. A piloto não quis parar.', tags:['#natureza','#adrenalina','#real'] }
+];
+
+const VIDEO_SRC = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+
+// ----- ESTADO GLOBAL -----
+let currentVideoIndex = 0;
+let isAnimating = false;
+let touchStartY = 0;
+let likedStatus = {};    // guarda se cada vídeo foi curtido
+let allVideos = [];      // elementos DOM dos vídeos
+let audioAllowed = false;
+let splashTimeout = null;
+
+// ----- ELEMENTOS DOM -----
+const splashDiv = document.getElementById('splash');
+const feedDiv = document.getElementById('feed');
+const tapBtnDiv = document.getElementById('tapBtn');
+const feedContainer = document.getElementById('feedContainer');
+const toastEl = document.getElementById('toast');
+
+// ----- FUNÇÕES AUXILIARES -----
+function showToast(msg, duration = 2000) {
+  if (!toastEl) return;
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  setTimeout(() => toastEl.classList.remove('show'), duration);
+}
+
+function doLike(index, btnElement) {
+  if (!likedStatus[index]) {
+    likedStatus[index] = true;
+    btnElement?.classList.add('liked');
+    showToast('❤️ Curtido!');
+  } else {
+    likedStatus[index] = false;
+    btnElement?.classList.remove('liked');
+    showToast('💔 Curtida removida');
+  }
+}
+
+function showPaywall() {
+  document.getElementById('paywall')?.classList.remove('hidden');
+}
+function hidePaywall() {
+  document.getElementById('paywall')?.classList.add('hidden');
+}
+
+// ----- CONSTRUÇÃO DOS CARDS (cada card tem seu próprio vídeo) -----
+function buildCards() {
+  feedContainer.innerHTML = '';
+  allVideos = [];
+  for (let i = 0; i < CARDS.length; i++) {
+    const card = CARDS[i];
+    const el = document.createElement('div');
+    el.className = 'video-card ' + (i === 0 ? 'active' : 'below');
+    el.dataset.index = i;
+
+    // elemento de vídeo
+    const vid = document.createElement('video');
+    vid.className = 'real-video';
+    vid.src = VIDEO_SRC;
+    vid.muted = true;      // importante: áudio só será ativado após primeiro toque
+    vid.loop = true;
+    vid.playsInline = true;
+    vid.setAttribute('playsinline', '');
+    vid.setAttribute('webkit-playsinline', '');
+    allVideos.push(vid);
+
+    // overlay e scan-line
+    const overlay = document.createElement('div'); overlay.className = 'video-overlay'; el.appendChild(overlay);
+    const scan = document.createElement('div'); scan.className = 'scan-line'; el.appendChild(scan);
+
+    // badge
+    const badge = document.createElement('div'); badge.className = 'cat-badge ' + card.cat; badge.innerHTML = card.label; el.appendChild(badge);
+
+    // progress bar (apenas para o primeiro vídeo, mas mantemos)
+    const pb = document.createElement('div'); pb.className = 'progress-bar';
+    if (i === 0) {
+      const pf = document.createElement('div'); pf.className = 'progress-fill'; pb.appendChild(pf);
+    }
+    el.appendChild(pb);
+
+    // informações (texto)
+    const infoDiv = document.createElement('div'); infoDiv.className = 'video-info';
+    const tagsDiv = document.createElement('div'); tagsDiv.className = 'video-tags';
+    card.tags.forEach(t => {
+      const tSpan = document.createElement('span'); tSpan.className = 'tag'; tSpan.innerText = t; tagsDiv.appendChild(tSpan);
+    });
+    const titleDiv = document.createElement('div'); titleDiv.className = 'video-title'; titleDiv.innerHTML = card.title;
+    const subDiv = document.createElement('div'); subDiv.className = 'video-sub'; subDiv.innerText = card.sub;
+    infoDiv.appendChild(tagsDiv); infoDiv.appendChild(titleDiv); infoDiv.appendChild(subDiv);
+    el.appendChild(infoDiv);
+
+    // ações laterais (curtir + compartilhar)
+    const side = document.createElement('div'); side.className = 'side-actions';
+    const likeBtn = document.createElement('div'); likeBtn.className = 'action-btn'; likeBtn.id = `like${i}`;
+    likeBtn.onclick = (function(idx) { return function() { doLike(idx, likeBtn); }; })(i);
+    likeBtn.innerHTML = '<div class="action-icon">❤️</div><span class="action-label">Curtir</span>';
+    const shareBtn = document.createElement('div'); shareBtn.className = 'action-btn';
+    shareBtn.onclick = () => { showToast('🔗 Link copiado! "Você viu o que acontece?"'); navigator.clipboard?.writeText('glympse://video/' + i); };
+    shareBtn.innerHTML = '<div class="action-icon">🔗</div><span class="action-label">Compartilhar</span>';
+    side.appendChild(likeBtn); side.appendChild(shareBtn);
+    el.appendChild(side);
+
+    // finalmente adiciona o vídeo e o card ao container
+    el.insertBefore(vid, overlay);   // vídeo fica atrás do overlay
+    feedContainer.appendChild(el);
+  }
+}
+
+// ----- NAVEGAÇÃO POR SWIPE -----
+function updateCardPosition(newIndex) {
+  if (newIndex < 0 || newIndex >= CARDS.length || isAnimating) return false;
+  isAnimating = true;
+  const cards = document.querySelectorAll('.video-card');
+  const oldActive = currentVideoIndex;
+  if (newIndex > oldActive) {
+    // scroll para baixo
+    cards[oldActive].classList.remove('active');
+    cards[oldActive].classList.add('above');
+    cards[newIndex].classList.remove('below');
+    cards[newIndex].classList.add('active');
+    // reset do resto
+    for (let i = 0; i < cards.length; i++) {
+      if (i !== oldActive && i !== newIndex) {
+        cards[i].classList.remove('above', 'below', 'active');
+        if (i < newIndex) cards[i].classList.add('above');
+        else cards[i].classList.add('below');
+      }
+    }
+  } else if (newIndex < oldActive) {
+    cards[oldActive].classList.remove('active');
+    cards[oldActive].classList.add('below');
+    cards[newIndex].classList.remove('above');
+    cards[newIndex].classList.add('active');
+    for (let i = 0; i < cards.length; i++) {
+      if (i !== oldActive && i !== newIndex) {
+        cards[i].classList.remove('above', 'below', 'active');
+        if (i < newIndex) cards[i].classList.add('above');
+        else cards[i].classList.add('below');
+      }
+    }
+  }
+  currentVideoIndex = newIndex;
+  // pausa vídeos não ativos e toca o ativo (se áudio permitido)
+  allVideos.forEach((v, idx) => {
+    if (idx === currentVideoIndex && audioAllowed) {
+      v.play().catch(e => console.log('play error', e));
+    } else {
+      v.pause();
+    }
+  });
+  setTimeout(() => { isAnimating = false; }, 400);
+  return true;
+}
+
+// ----- EVENTOS DE TOQUE -----
+function attachTouchEvents() {
+  feedContainer.addEventListener('touchstart', (e) => {
+    touchStartY = e.touches[0].clientY;
+  });
+  feedContainer.addEventListener('touchmove', (e) => {
+    if (isAnimating) return;
+    const diff = e.touches[0].clientY - touchStartY;
+    if (Math.abs(diff) < 30) return;
+    if (diff > 0 && currentVideoIndex > 0) {
+      e.preventDefault();
+      updateCardPosition(currentVideoIndex - 1);
+    } else if (diff < 0 && currentVideoIndex < CARDS.length - 1) {
+      e.preventDefault();
+      updateCardPosition(currentVideoIndex + 1);
+    }
+    touchStartY = e.touches[0].clientY;
+  });
+}
+
+// ----- ATIVAÇÃO DO ÁUDIO E PLAY -----
+function enableAudioAndPlay() {
+  if (audioAllowed) return;
+  audioAllowed = true;
+  // desmuta todos os vídeos e dá play no ativo
+  allVideos.forEach((v, idx) => {
+    v.muted = false;
+    v.volume = 0.6;
+    if (idx === currentVideoIndex) {
+      v.play().catch(e => console.log('play after tap', e));
+    }
+  });
+  showToast('🔊 Áudio ativado');
+}
+
+// ----- SPLASH + FLUXO DE ABERTURA -----
+function startApp() {
+  // esconde splash e mostra feed + tap overlay
+  splashDiv.classList.add('hidden');
+  feedDiv.classList.remove('hidden');
+  tapBtnDiv.classList.remove('hidden');
+  // constrói os cards se ainda não existirem
+  if (!feedContainer.hasChildNodes()) {
+    buildCards();
+    attachTouchEvents();
+    // pré-carrega o primeiro vídeo (mudo)
+    allVideos[0]?.play().catch(e => console.log('auto muted', e));
+  }
+  // evento de toque no overlay para ativar áudio
+  tapBtnDiv.onclick = () => {
+    enableAudioAndPlay();
+    tapBtnDiv.classList.add('hidden');
+  };
+}
+
+// ----- SIMULAÇÃO DO CONTADOR DE 10 DIAS (apenas exemplo) -----
+function initTenDaysCounter() {
+  const daysLeftSpan = document.querySelector('.days-counter');
+  if (daysLeftSpan) {
+    // calcula dias desde a primeira instalação (via localStorage)
+    let installDate = localStorage.getItem('glympse_install_date');
+    if (!installDate) {
+      installDate = new Date().toISOString();
+      localStorage.setItem('glympse_install_date', installDate);
+    }
+    const daysPassed = Math.floor((new Date() - new Date(installDate)) / (1000 * 3600 * 24));
+    const daysLeft = Math.max(0, 10 - daysPassed);
+    daysLeftSpan.innerText = daysLeft;
+  }
+}
+
+// ----- RELÓGIO -----
+function updateClock() {
+  const now = new Date();
+  const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const clockSpan = document.getElementById('clock');
+  if (clockSpan) clockSpan.innerText = timeStr;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ----- INICIALIZAÇÃO GERAL -----
+function init() {
+  initTenDaysCounter();
+  // Garante que o splash saia após 1.5s (mesmo sem toque, mas com toque também)
+  splashTimeout = setTimeout(() => {
+    if (!splashDiv.classList.contains('hidden')) startApp();
+  }, 1800);
+  // também permite toque no splash para iniciar imediatamente
+  splashDiv.addEventListener('click', () => {
+    if (splashTimeout) clearTimeout(splashTimeout);
+    if (!splashDiv.classList.contains('hidden')) startApp();
+  });
+}
+init();
+</script>
+</body>
+</html>
