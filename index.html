@@ -3,59 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GLYMPSE</title>
+    <title>GLYMPSE - LUXURY AI</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: #000; color: #fff; overflow: hidden; height: 100vh; width: 100vw; font-family: sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #000; color: #fff; overflow: hidden; height: 100vh; width: 100vw; }
+
+        /* VÍDEO DE FUNDO */
         .video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #000; }
-        .video-bg { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 30px; background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent, rgba(0,0,0,0.9)); }
-        .logo { font-size: 28px; font-weight: bold; letter-spacing: 6px; }
-        .logo span { color: #ff3e60; }
-        .content { margin-bottom: 50px; }
-        .tag { color: #ff3e60; font-size: 13px; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
-        .title { font-size: 32px; font-weight: bold; margin-bottom: 10px; line-height: 1.1; }
-        .desc { font-size: 14px; color: #aaa; }
+        .video-bg { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; }
+
+        /* INTERFACE DE ELITE */
+        .overlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            display: flex; flex-direction: column; justify-content: space-between; 
+            padding: 25px; 
+            background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.4) 100%);
+            pointer-events: none;
+        }
         
-        /* BOTÃO DE ENTRADA */
-        #tapBtn { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); cursor: pointer; }
-        .play-box { border: 1px solid #ff3e60; color: #ff3e60; padding: 20px 40px; border-radius: 5px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 0 20px rgba(255, 62, 96, 0.3); }
+        .header { display: flex; justify-content: space-between; align-items: center; pointer-events: auto; margin-top: 10px; }
+        .logo { font-size: 26px; font-weight: 900; letter-spacing: 6px; text-shadow: 0 0 15px rgba(255,255,255,0.3); }
+        .logo span { color: #ff3e60; }
+        
+        .top-icons { display: flex; gap: 15px; }
+        .circle-btn { 
+            background: rgba(255,255,255,0.1); border-radius: 50%; width: 45px; height: 45px; 
+            display: flex; align-items: center; justify-content: center; 
+            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .main-content { margin-bottom: 90px; pointer-events: auto; }
+        .badge { 
+            background: rgba(255, 62, 96, 0.15); border: 1px solid #ff3e60; color: #ff3e60; 
+            padding: 5px 15px; border-radius: 20px; font-size: 11px; font-weight: bold; 
+            display: inline-flex; align-items: center; gap: 5px; margin-bottom: 15px; letter-spacing: 1px;
+        }
+        .video-title { font-size: 32px; font-weight: 800; line-height: 1.1; margin-bottom: 10px; text-transform: uppercase; }
+        .video-description { font-size: 14px; color: rgba(255,255,255,0.7); max-width: 85%; line-height: 1.4; }
+
+        /* BOTÕES LATERAIS */
+        .side-actions { position: absolute; right: 20px; bottom: 140px; display: flex; flex-direction: column; gap: 25px; pointer-events: auto; }
+        .action-node { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .btn-action { 
+            width: 55px; height: 55px; background: rgba(255,255,255,0.1); border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; font-size: 22px;
+            backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.2);
+        }
+        .btn-label { font-size: 11px; font-weight: 500; color: #eee; }
+
+        /* BARRA DE NAVEGAÇÃO INFERIOR */
+        .bottom-nav { 
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 85px; 
+            background: rgba(0,0,0,0.9); display: flex; justify-content: space-around; 
+            align-items: center; padding-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.05);
+            pointer-events: auto; z-index: 100;
+        }
+        .nav-link { display: flex; flex-direction: column; align-items: center; gap: 5px; text-decoration: none; color: #666; }
+        .nav-link.active { color: #fff; }
+        .nav-link.pro { color: #ffcf33; }
+        .nav-text { font-size: 10px; font-weight: bold; letter-spacing: 1px; }
+
+        /* TELA DE ENTRADA (Obrigatório para o Android liberar o vídeo) */
+        #entranceLayer { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #000; z-index: 999; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; cursor: pointer;
+        }
+        .glitch-text { color: #ff3e60; font-weight: 900; letter-spacing: 10px; font-size: 30px; margin-bottom: 20px; }
+        .start-btn { border: 1px solid #fff; padding: 15px 40px; border-radius: 50px; font-size: 12px; font-weight: bold; letter-spacing: 2px; }
     </style>
 </head>
 <body>
 
-    <div id="tapBtn">
-        <div class="play-box">Acessar Sistema</div>
+    <div id="entranceLayer">
+        <div class="glitch-text">GLYMPSE</div>
+        <div class="start-btn">ENTRAR NO SISTEMA</div>
     </div>
 
     <div class="video-container">
-        <video id="mainVideo" class="video-bg" loop playsinline muted>
+        <video id="glympseVideo" class="video-bg" loop playsinline muted>
             <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
         </video>
     </div>
 
     <div class="overlay">
-        <div class="logo">GLY<span>MPSE</span></div>
-        <div class="content">
-            <div class="tag">⚡ SISTEMA ATIVO</div>
-            <div class="title">REDE SINTÉTICA<br>ESTABELECIDA</div>
-            <p class="desc">Interface Glympse v1.0 - Modo Seguro</p>
+        <div class="header">
+            <div class="logo">GLY<span>MPSE</span></div>
+            <div class="top-icons">
+                <div class="circle-btn">🔍</div>
+                <div class="circle-btn">👑</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="badge">⚡ SISTEMA ATIVO</div>
+            <div class="video-title">REDE SINTÉTICA <br>ESTABELECIDA</div>
+            <div class="video-description">
+                Iniciando feed autônomo de realidade aumentada. Conexão criptografada estável.
+            </div>
+        </div>
+
+        <div class="side-actions">
+            <div class="action-node">
+                <div class="btn-action">❤️</div>
+                <div class="btn-label">12.4K</div>
+            </div>
+            <div class="action-node">
+                <div class="btn-action">🔗</div>
+                <div class="btn-label">Share</div>
+            </div>
         </div>
     </div>
 
-    <script>
-        const video = document.getElementById('mainVideo');
-        const tapBtn = document.getElementById('tapBtn');
+    <nav class="bottom-nav">
+        <a href="#" class="nav-link active">
+            <span style="font-size: 24px;">⚡</span>
+            <span class="nav-text">FEED</span>
+        </a>
+        <a href="#" class="nav-link">
+            <span style="font-size: 24px;">🎲</span>
+            <span class="nav-text">ROLETA</span>
+        </a>
+        <a href="#" class="nav-link pro">
+            <span style="font-size: 24px;">👑</span>
+            <span class="nav-text">PRO</span>
+        </a>
+        <a href="#" class="nav-link">
+            <span style="font-size: 24px;">👤</span>
+            <span class="nav-text">PERFIL</span>
+        </a>
+    </nav>
 
-        tapBtn.addEventListener('click', () => {
-            video.muted = false; 
+    <script>
+        const video = document.getElementById('glympseVideo');
+        const entrance = document.getElementById('entranceLayer');
+
+        entrance.addEventListener('click', () => {
+            // Android precisa desse clique para soltar o som e o vídeo
+            video.muted = false;
             video.play().then(() => {
-                tapBtn.style.display = 'none'; 
+                entrance.style.display = 'none';
             }).catch(e => {
-                // Se der erro com som, tenta rodar mudo mesmo
+                // Se o navegador barrar o som, rodamos mudo mas o vídeo aparece
                 video.muted = true;
                 video.play();
-                tapBtn.style.display = 'none';
+                entrance.style.display = 'none';
             });
         });
     </script>
